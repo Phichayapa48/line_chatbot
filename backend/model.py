@@ -43,7 +43,7 @@ def load_model():
 
     state_dict = torch.load(MODEL_PATH, map_location=DEVICE)
 
-    # รองรับ checkpoint ที่ save เป็น dict
+    # รองรับ checkpoint หลายรูปแบบ
     if isinstance(state_dict, dict):
         if "model_state" in state_dict:
             state_dict = state_dict["model_state"]
