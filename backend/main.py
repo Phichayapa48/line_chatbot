@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from PIL import Image
 import io
 import torch
@@ -14,26 +14,31 @@ CLASS_INFO = {
     2: ("overweight", "คุณมีน้ำหนักเกินเกณฑ์ 😅")
 }
 
-@app.on_event("startup")
-def load_model_on_startup():
-    """
-    Render start service → โหลดโมเดลจาก Supabase ทันที
-    """
-    get_model()
-
 @app.get("/")
 def root():
     return {"status": "ok"}
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(request: Request, file: UploadFile = File(None)):
+    """
+    รองรับทั้ง
+    - Swagger / form-data (UploadFile)
+    - LINE webhook (application/octet-stream)
+    """
     try:
-        image_bytes = await file.read()
+        # ✅ กรณี Swagger / form-data
+        if file is not None:
+            image_bytes = await file.read()
+        else:
+            # ✅ กรณี LINE webhook
+            image_bytes = await request.body()
+
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    except Exception:
+
+    except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
-    model = get_model()
+    model = get_model()  # lazy load
     x = preprocess_image(image)
 
     with torch.no_grad():
