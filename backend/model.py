@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-MODEL_URL = os.getenv("MODEL_URL")  # Supabase public URL
+MODEL_URL = os.getenv("https://xqtipdusjwtykqakqhgd.supabase.co/storage/v1/object/sign/models/mobilenetV3_large_best.pth?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNGQ1NDJjYy04ZDE2LTRhNWUtYmNiNi03ZGRjMGRkM2NiNGMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtb2RlbHMvbW9iaWxlbmV0VjNfbGFyZ2VfYmVzdC5wdGgiLCJpYXQiOjE3Njg2NDcwMDAsImV4cCI6MTgwMDE4MzAwMH0.2MkM5DCxgtfhjvAJhHks4Fn-1UqHcFPHBaF1NjpuDxg")  # Supabase public URL
 MODEL_PATH = "model.pth"
 DEVICE = "cpu"
 NUM_CLASSES = 3
