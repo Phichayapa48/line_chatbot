@@ -1,4 +1,5 @@
 from torchvision import transforms
+import torch
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -9,6 +10,6 @@ transform = transforms.Compose([
     )
 ])
 
-
 def preprocess_image(image):
-    return transform(image).unsqueeze(0)
+    x = transform(image).unsqueeze(0)
+    return x
