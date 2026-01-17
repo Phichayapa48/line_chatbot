@@ -70,7 +70,7 @@ app.post("/webhook", async (req, res) => {
 
     /* 3️⃣ ส่งไป AI Backend */
     const aiRes = await axios.post(
-      "https://bmi-ai-backend.onrender.com/predict",
+      "https://bmi-ai-backend-ngbp.onrender.com/predict",
       form,
       {
         headers: form.getHeaders(),
