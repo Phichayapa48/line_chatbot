@@ -2,23 +2,31 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import FormData from "form-data";
- 
+
 dotenv.config();
- 
+
 const app = express();
 app.use(express.json());
- 
-// ===== LINE WEBHOOK =====
+
+// =======================
+// CONFIG
+// =======================
+const AI_API_URL = "https://bmi-ai-backend-ngbp.onrender.com";
+const LINE_API = "https://api.line.me/v2/bot/message/reply";
+
+// =======================
+// LINE WEBHOOK
+// =======================
 app.post("/webhook", async (req, res) => {
-  // 👉 ตอบ 200 ให้ LINE ก่อน กัน timeout
+  // ตอบ LINE ก่อน กัน timeout
   res.sendStatus(200);
- 
+
+  const event = req.body?.events?.[0];
+  if (!event) return;
+
+  const replyToken = event.replyToken;
+
   try {
-    const event = req.body.events?.[0];
-    if (!event) return;
- 
-    const replyToken = event.replyToken;
- 
     // ===== รับเฉพาะรูป =====
     if (event.message?.type !== "image") {
       await replyLine(
@@ -27,9 +35,9 @@ app.post("/webhook", async (req, res) => {
       );
       return;
     }
- 
+
     const imageId = event.message.id;
- 
+
     // 1️⃣ โหลดรูปจาก LINE
     const imageRes = await axios.get(
       `https://api-data.line.me/v2/bot/message/${imageId}/content`,
@@ -38,60 +46,71 @@ app.post("/webhook", async (req, res) => {
           Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
         },
         responseType: "arraybuffer",
-        timeout: 10000,
+        timeout: 15000,
       }
     );
- 
-    // 2️⃣ เตรียม multipart/form-data ให้ตรงกับ FastAPI
+
+    // 2️⃣ เตรียม form-data
     const form = new FormData();
     form.append("file", imageRes.data, {
       filename: "image.jpg",
       contentType: "image/jpeg",
     });
- 
+
     // 3️⃣ ส่งไป AI Backend
     const aiRes = await axios.post(
-      "https://bmi-ai-backend.onrender.com/predict",
+      `${AI_API_URL}/predict`,
       form,
       {
         headers: {
           ...form.getHeaders(),
         },
-        timeout: 20000,
+        timeout: 30000,
+        validateStatus: () => true, // 🔥 ไม่ throw auto
       }
     );
- 
+
+    // ===== เช็ก response จาก AI =====
+    if (aiRes.status !== 200) {
+      console.error("AI status error:", aiRes.status, aiRes.data);
+      await replyLine(
+        replyToken,
+        "ขออภัย ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ 😢"
+      );
+      return;
+    }
+
     const { message, confidence } = aiRes.data;
- 
+
     const confidencePercent =
       typeof confidence === "number"
         ? (confidence * 100).toFixed(1)
         : "ไม่ทราบ";
- 
+
     // 4️⃣ ตอบกลับ LINE
     await replyLine(
       replyToken,
       `${message}\nความมั่นใจ: ${confidencePercent}%`
     );
+
   } catch (err) {
-    console.error(
-      "Webhook processing error:",
-      err.response?.data || err.message
-    );
- 
-    if (req.body?.events?.[0]?.replyToken) {
+    console.error("Webhook error:", err.response?.data || err.message);
+
+    if (replyToken) {
       await replyLine(
-        req.body.events[0].replyToken,
+        replyToken,
         "ขออภัย ระบบมีปัญหาชั่วคราว 😢"
       );
     }
   }
 });
- 
-// ===== ฟังก์ชันตอบ LINE =====
+
+// =======================
+// Reply LINE
+// =======================
 async function replyLine(replyToken, text) {
   await axios.post(
-    "https://api.line.me/v2/bot/message/reply",
+    LINE_API,
     {
       replyToken,
       messages: [{ type: "text", text }],
@@ -101,12 +120,15 @@ async function replyLine(replyToken, text) {
         Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
+      timeout: 10000,
     }
   );
 }
- 
-// ===== START SERVER =====
+
+// =======================
+// START SERVER
+// =======================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () =>
-  console.log(`✅ LINE Bot running on port ${PORT}`)
-);
+app.listen(PORT, () => {
+  console.log(`✅ LINE Bot running on port ${PORT}`);
+});
