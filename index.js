@@ -24,32 +24,29 @@ app.post("/webhook", async (req, res) => {
         `https://api-data.line.me/v2/bot/message/${imageId}/content`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+            Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
           },
-          responseType: "arraybuffer"
+          responseType: "arraybuffer",
         }
       );
 
-      // 2️⃣ ส่งรูปไป backend AI
-      const aiUrl = process.env.AI_BACKEND_URL.endsWith("/predict")
-        ? process.env.AI_BACKEND_URL
-        : process.env.AI_BACKEND_URL + "/predict";
-
+      // 2️⃣ ส่งรูปไป backend AI (Render)
       const aiRes = await axios.post(
-        aiUrl,
+        "https://bmi-ai-backend.onrender.com/predict",
         imageRes.data,
         {
           headers: {
-            "Content-Type": "application/octet-stream"
+            "Content-Type": "application/octet-stream",
           },
-          timeout: 15000
+          timeout: 20000,
         }
       );
 
       const { message, confidence } = aiRes.data;
-      const confidencePercent = confidence
-        ? (confidence * 100).toFixed(1)
-        : "ไม่ทราบ";
+      const confidencePercent =
+        typeof confidence === "number"
+          ? (confidence * 100).toFixed(1)
+          : "ไม่ทราบ";
 
       // 3️⃣ ตอบกลับ LINE
       await replyLine(
@@ -60,7 +57,7 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 👉 กรณีอื่น
+    // 👉 กรณีไม่ใช่รูป
     await replyLine(
       replyToken,
       "กรุณาส่งรูปใบหน้ามาเพื่อวิเคราะห์ BMI นะงับ 😊"
@@ -91,13 +88,13 @@ async function replyLine(replyToken, text) {
     "https://api.line.me/v2/bot/message/reply",
     {
       replyToken,
-      messages: [{ type: "text", text }]
+      messages: [{ type: "text", text }],
     },
     {
       headers: {
         Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }
   );
 }
