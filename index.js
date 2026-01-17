@@ -98,7 +98,7 @@ app.post("/webhook", async (req, res) => {
     });
 
     const aiRes = await axios.post(
-      "https://bmi-ai-backend.onrender.com/predict",
+      "https://line-chatbot-43pa.onrender.com/predict",
       form,
       { headers: form.getHeaders() }
     );
