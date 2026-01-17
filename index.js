@@ -1,11 +1,12 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
+import FormData from "form-data";
 
 dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json());
 
 // ===== LINE WEBHOOK =====
 app.post("/webhook", async (req, res) => {
@@ -15,7 +16,6 @@ app.post("/webhook", async (req, res) => {
 
     const replyToken = event.replyToken;
 
-    // 👉 ถ้าเป็นรูป → ส่งให้ AI
     if (event.message?.type === "image") {
       const imageId = event.message.id;
 
@@ -30,25 +30,28 @@ app.post("/webhook", async (req, res) => {
         }
       );
 
-      // 2️⃣ ส่งรูปไป backend AI (Render)
+      // 2️⃣ เตรียม multipart/form-data
+      const form = new FormData();
+      form.append("file", imageRes.data, {
+        filename: "image.jpg",
+        contentType: "image/jpeg",
+      });
+
+      // 3️⃣ ส่งไป AI backend
       const aiRes = await axios.post(
         "https://bmi-ai-backend.onrender.com/predict",
-        imageRes.data,
+        form,
         {
           headers: {
-            "Content-Type": "application/octet-stream",
+            ...form.getHeaders(),
           },
           timeout: 20000,
         }
       );
 
       const { message, confidence } = aiRes.data;
-      const confidencePercent =
-        typeof confidence === "number"
-          ? (confidence * 100).toFixed(1)
-          : "ไม่ทราบ";
+      const confidencePercent = (confidence * 100).toFixed(1);
 
-      // 3️⃣ ตอบกลับ LINE
       await replyLine(
         replyToken,
         `${message}\nความมั่นใจ: ${confidencePercent}%`
@@ -57,7 +60,6 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 👉 กรณีไม่ใช่รูป
     await replyLine(
       replyToken,
       "กรุณาส่งรูปใบหน้ามาเพื่อวิเคราะห์ BMI นะงับ 😊"
@@ -65,11 +67,7 @@ app.post("/webhook", async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    console.error(
-      "Webhook error:",
-      err.response?.status,
-      err.response?.data || err.message
-    );
+    console.error("Webhook error:", err.response?.data || err.message);
 
     if (req.body?.events?.[0]?.replyToken) {
       await replyLine(
@@ -78,7 +76,7 @@ app.post("/webhook", async (req, res) => {
       );
     }
 
-    res.sendStatus(500);
+    res.sendStatus(200);
   }
 });
 
@@ -99,7 +97,6 @@ async function replyLine(replyToken, text) {
   );
 }
 
-// ===== START SERVER =====
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () =>
   console.log(`✅ LINE Bot running on port ${PORT}`)
