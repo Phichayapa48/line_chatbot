@@ -11,7 +11,7 @@ app.use(express.json());
 // =======================
 // CONFIG
 // =======================
-const AI_API_URL = process.env.AI_API_URL;
+const AI_API_URL = process.env.AI_API_URL; // ❗ https://bmi-ai-backend-ngbp.onrender.com
 const LINE_REPLY_API = "https://api.line.me/v2/bot/message/reply";
 
 if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) {
@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 // LINE WEBHOOK
 // =======================
 app.post("/webhook", async (req, res) => {
-  // ตอบ LINE ก่อน ป้องกัน timeout
+  // 👉 ตอบ LINE ทันที ป้องกัน timeout
   res.sendStatus(200);
 
   const event = req.body?.events?.[0];
@@ -41,7 +41,9 @@ app.post("/webhook", async (req, res) => {
   const replyToken = event.replyToken;
 
   try {
-    // ===== รับเฉพาะรูป =====
+    // =======================
+    // 1️⃣ รับเฉพาะรูปภาพ
+    // =======================
     if (event.message?.type !== "image") {
       await replyLine(
         replyToken,
@@ -52,7 +54,9 @@ app.post("/webhook", async (req, res) => {
 
     const imageId = event.message.id;
 
-    // 1️⃣ โหลดรูปจาก LINE
+    // =======================
+    // 2️⃣ โหลดรูปจาก LINE
+    // =======================
     const imageRes = await axios.get(
       `https://api-data.line.me/v2/bot/message/${imageId}/content`,
       {
@@ -64,39 +68,48 @@ app.post("/webhook", async (req, res) => {
       }
     );
 
-    // 2️⃣ เตรียม multipart/form-data
+    // =======================
+    // 3️⃣ เตรียม multipart/form-data
+    // =======================
     const form = new FormData();
     form.append("file", imageRes.data, {
       filename: "image.jpg",
       contentType: "image/jpeg",
     });
 
-    // 3️⃣ ส่งไป AI Backend (BMI Regression)
+    // =======================
+    // 4️⃣ ส่งไป AI Backend
+    // =======================
     const aiRes = await axios.post(
       `${AI_API_URL}/predict`,
       form,
       {
         headers: {
           ...form.getHeaders(),
+          Accept: "application/json",
         },
         timeout: 30000,
-        validateStatus: () => true,
       }
     );
 
-    // ===== เช็ก backend error =====
+    // =======================
+    // 5️⃣ ตรวจ error จาก backend
+    // =======================
     if (aiRes.status !== 200) {
       console.error("AI ERROR:", aiRes.status, aiRes.data);
-      await replyLine(
-        replyToken,
-        "❌ ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ"
-      );
+
+      let msg = "❌ ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ";
+
+      if (aiRes.status === 405) {
+        msg = "❌ ระบบ AI ไม่รองรับวิธีเรียกแบบนี้ (405)";
+      }
+
+      await replyLine(replyToken, msg);
       return;
     }
 
     const { bmi, message } = aiRes.data || {};
 
-    // ===== backend แจ้ง error / ไม่พบหน้า =====
     if (typeof bmi !== "number") {
       await replyLine(
         replyToken,
@@ -105,7 +118,9 @@ app.post("/webhook", async (req, res) => {
       return;
     }
 
-    // ===== ตีความ BMI =====
+    // =======================
+    // 6️⃣ ตีความ BMI
+    // =======================
     let status = "";
     if (bmi < 18.5) status = "น้ำหนักต่ำกว่าเกณฑ์";
     else if (bmi < 23) status = "น้ำหนักปกติ";
@@ -122,7 +137,9 @@ app.post("/webhook", async (req, res) => {
 ไม่สามารถใช้แทนการตรวจวัดจริงได้
 `.trim();
 
-    // 4️⃣ ตอบกลับ LINE
+    // =======================
+    // 7️⃣ ตอบกลับ LINE
+    // =======================
     await replyLine(replyToken, replyText);
 
   } catch (err) {
