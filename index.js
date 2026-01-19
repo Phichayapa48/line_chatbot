@@ -11,7 +11,7 @@ app.use(express.json());
 // =======================
 // CONFIG
 // =======================
-const AI_API_URL = process.env.AI_API_URL; // ❗ https://bmi-ai-backend-ngbp.onrender.com
+const AI_API_URL = process.env.AI_API_URL; // https://xxx.onrender.com
 const LINE_REPLY_API = "https://api.line.me/v2/bot/message/reply";
 
 if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) {
@@ -22,7 +22,7 @@ if (!AI_API_URL) {
 }
 
 // =======================
-// HEALTH CHECK (Render)
+// HEALTH CHECK
 // =======================
 app.get("/", (req, res) => {
   res.json({ status: "ok", service: "LINE BMI Bot" });
@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 // LINE WEBHOOK
 // =======================
 app.post("/webhook", async (req, res) => {
-  // 👉 ตอบ LINE ทันที ป้องกัน timeout
+  // 🔴 ตอบ LINE ทันที กัน timeout
   res.sendStatus(200);
 
   const event = req.body?.events?.[0];
@@ -42,12 +42,12 @@ app.post("/webhook", async (req, res) => {
 
   try {
     // =======================
-    // 1️⃣ รับเฉพาะรูปภาพ
+    // 1️⃣ รับเฉพาะรูป
     // =======================
     if (event.message?.type !== "image") {
       await replyLine(
         replyToken,
-        "📸 กรุณาส่งรูปใบหน้ามาเพื่อประเมินค่า BMI นะคะ 😊"
+        "📸 กรุณาส่ง *ภาพใบหน้าตรง* เพื่อประเมินค่า BMI นะคะ 😊"
       );
       return;
     }
@@ -69,7 +69,7 @@ app.post("/webhook", async (req, res) => {
     );
 
     // =======================
-    // 3️⃣ เตรียม multipart/form-data
+    // 3️⃣ เตรียม form-data
     // =======================
     const form = new FormData();
     form.append("file", imageRes.data, {
@@ -93,33 +93,37 @@ app.post("/webhook", async (req, res) => {
     );
 
     // =======================
-    // 5️⃣ ตรวจ error จาก backend
+    // 5️⃣ ตรวจ response
     // =======================
     if (aiRes.status !== 200) {
-      console.error("AI ERROR:", aiRes.status, aiRes.data);
-
-      let msg = "❌ ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ";
-
-      if (aiRes.status === 405) {
-        msg = "❌ ระบบ AI ไม่รองรับวิธีเรียกแบบนี้ (405)";
-      }
-
-      await replyLine(replyToken, msg);
+      await replyLine(
+        replyToken,
+        "❌ ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ"
+      );
       return;
     }
 
-    const { bmi, message } = aiRes.data || {};
+    const { bmi, message, model } = aiRes.data || {};
 
+    if (model) {
+      console.log("🧠 AI model:", model);
+    }
+
+    // =======================
+    // 6️⃣ กรณีไม่พบใบหน้า / unseen
+    // =======================
     if (typeof bmi !== "number") {
       await replyLine(
         replyToken,
-        message || "ไม่สามารถประเมิน BMI จากภาพนี้ได้ 😢"
+        message ||
+          "😢 ไม่พบใบหน้าที่ชัดเจนในภาพนี้\n" +
+          "กรุณาถ่ายภาพใบหน้าตรง แสงสว่างเพียงพอ และไม่ใส่หน้ากากนะคะ"
       );
       return;
     }
 
     // =======================
-    // 6️⃣ ตีความ BMI
+    // 7️⃣ ตีความ BMI
     // =======================
     let status = "";
     if (bmi < 18.5) status = "น้ำหนักต่ำกว่าเกณฑ์";
@@ -137,20 +141,26 @@ app.post("/webhook", async (req, res) => {
 ไม่สามารถใช้แทนการตรวจวัดจริงได้
 `.trim();
 
-    // =======================
-    // 7️⃣ ตอบกลับ LINE
-    // =======================
     await replyLine(replyToken, replyText);
 
   } catch (err) {
     console.error("Webhook error:", err.response?.data || err.message);
 
-    if (replyToken) {
+    if (!replyToken) return;
+
+    // ⏳ กรณี timeout
+    if (err.code === "ECONNABORTED") {
       await replyLine(
         replyToken,
-        "ขออภัย ระบบมีปัญหาชั่วคราว 😢"
+        "⏳ ระบบประมวลผลใช้เวลานาน กรุณาลองใหม่อีกครั้งนะคะ"
       );
+      return;
     }
+
+    await replyLine(
+      replyToken,
+      "ขออภัย ระบบมีปัญหาชั่วคราว 😢"
+    );
   }
 });
 
@@ -180,4 +190,4 @@ async function replyLine(replyToken, text) {
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`✅ LINE Bot running on port ${PORT}`);
-});
+})
