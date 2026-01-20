@@ -11,7 +11,7 @@ app.use(express.json());
 // =======================
 // CONFIG
 // =======================
-const AI_API_URL = process.env.AI_API_URL; // https://bmi-ai-backend.onrender.com
+const AI_API_URL = process.env.AI_API_URL;
 const LINE_REPLY_API = "https://api.line.me/v2/bot/message/reply";
 
 if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) {
@@ -92,12 +92,21 @@ app.post("/webhook", async (req, res) => {
       }
     );
 
-    const { status, confidence, error, message } = aiRes.data || {};
+    // =======================
+    // 5️⃣ อ่าน response จาก backend
+    // =======================
+    const {
+      ok,
+      class: bmiClass,
+      confidence,
+      error,
+      message,
+    } = aiRes.data || {};
 
     // =======================
-    // 5️⃣ กรณี backend ส่ง error
+    // 6️⃣ backend reject
     // =======================
-    if (error) {
+    if (!ok) {
       await replyLine(
         replyToken,
         message || "ไม่สามารถประเมินจากภาพนี้ได้ กรุณาลองใหม่อีกครั้งนะคะ"
@@ -106,9 +115,9 @@ app.post("/webhook", async (req, res) => {
     }
 
     // =======================
-    // 6️⃣ กรณีปกติ
+    // 7️⃣ backend success
     // =======================
-    if (!status || typeof confidence !== "number") {
+    if (!bmiClass || typeof confidence !== "number") {
       await replyLine(
         replyToken,
         "❌ ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่อีกครั้งนะคะ"
@@ -116,10 +125,16 @@ app.post("/webhook", async (req, res) => {
       return;
     }
 
+    const statusMap = {
+      under: "ต่ำกว่าเกณฑ์",
+      normal: "สมส่วน",
+      over: "สูงกว่าเกณฑ์",
+    };
+
     const replyText = `
 🧠 ผลการประเมินจาก AI
 ━━━━━━━━━━━━━━
-สถานะร่างกาย: ${status}
+สถานะร่างกาย: ${statusMap[bmiClass] || bmiClass}
 ความมั่นใจ: ${(confidence * 100).toFixed(1)}%
 
 ⚠️ เป็นการประเมินจากภาพ
