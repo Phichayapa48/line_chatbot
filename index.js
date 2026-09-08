@@ -29,7 +29,12 @@ const LINE_PUSH_API =
   "https://api.line.me/v2/bot/message/push";
 
 
-// ตัด / ด้านท้าย AI URL
+// URL Render ของ LINE Bot
+const PUBLIC_BOT_URL =
+  "https://line-chatbot-43pa.onrender.com";
+
+
+// ตัด / ท้าย AI API
 const AI_API_BASE =
   AI_API_URL
     ? AI_API_URL.replace(/\/+$/, "")
@@ -37,113 +42,131 @@ const AI_API_BASE =
 
 
 // ======================================================
-// PROCESSING MESSAGE CONFIG
+// PROCESSING MESSAGE
 //
-// false = ไม่ส่งจากโค้ด
-// เพราะ LINE OA ของคุณมี Auto-response อยู่แล้ว
+// false = ไม่ส่ง "กำลังประมวลผล" จากโค้ด
+// เพราะ LINE OA ของคุณมีข้อความนี้อยู่แล้ว
 //
-// ถ้าวันหลังปิด Auto-response ใน LINE OA
-// ให้เปลี่ยนเป็น true
+// ทำให้ไม่ขึ้น 2 รอบ
+//
+// ถ้าวันหลังปิด Auto-response ของ LINE OA
+// ให้เปลี่ยน false -> true
 // ======================================================
 const SEND_PROCESSING_FROM_CODE = false;
 
 
 // ======================================================
-// BMI RESULT IMAGES
-// Supabase Public URL
+// SUPABASE IMAGE SOURCE
+//
+// รูปจริงยังเก็บอยู่ใน Supabase
 // ======================================================
-const BMI_IMAGES = {
+const SUPABASE_BMI_IMAGES = {
 
-  // BMI < 18.5
   0: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi18.png",
 
-  // BMI 18.5 - 22.9
   1: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi22.png",
 
-  // BMI 23.0 - 24.9
   2: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/bmi2333.png",
 
-  // BMI 25.0 - 29.9
   3: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level1.png",
 
-  // BMI >= 30
   4: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level2.png",
 };
 
 
 // ======================================================
-// YOUTUBE WORKOUT แนะนำตาม BMI
+// IMAGE URL ที่ LINE จะเห็น
+//
+// LINE จะไม่ได้โหลด Supabase โดยตรง
+// แต่โหลดผ่าน Render Bot
+// ======================================================
+const BMI_IMAGES = {
+
+  0: `${PUBLIC_BOT_URL}/bmi-image/0.png`,
+
+  1: `${PUBLIC_BOT_URL}/bmi-image/1.png`,
+
+  2: `${PUBLIC_BOT_URL}/bmi-image/2.png`,
+
+  3: `${PUBLIC_BOT_URL}/bmi-image/3.png`,
+
+  4: `${PUBLIC_BOT_URL}/bmi-image/4.png`,
+};
+
+
+// ======================================================
+// YOUTUBE WORKOUT
 // ======================================================
 const BMI_YOUTUBE = {
 
   // ----------------------------------------------------
-  // 0 = น้ำหนักน้อยกว่าเกณฑ์
-  // เน้น Beginner Strength / Full Body
+  // BMI < 18.5
+  // เน้นสร้างความแข็งแรงแบบ Beginner
   // ----------------------------------------------------
   0: {
     title:
-      "💪 Beginner Full Body Strength 20 นาที",
+      "💪 Beginner Bodyweight Workout 20 นาที",
 
     url:
-      "https://www.youtube.com/watch?v=WrXeb6EZrK0"
+      "https://www.youtube.com/watch?v=_W9B2ffnO5c",
   },
 
 
   // ----------------------------------------------------
-  // 1 = สมส่วน
-  // Full Body + Cardio แบบ Beginner
+  // BMI 18.5 - 22.9
+  // Low Impact Full Body
   // ----------------------------------------------------
   1: {
     title:
-      "🏃 Beginner Full Body Workout 20 นาที",
+      "🏃 Low Impact Full Body Workout 20 นาที",
 
     url:
-      "https://www.youtube.com/watch?v=qxIk6KZrO1o"
+      "https://www.youtube.com/watch?v=Rizij3icAOU",
   },
 
 
   // ----------------------------------------------------
-  // 2 = น้ำหนักเกิน / ท้วม
-  // Low Impact โดยเฉพาะ Beginner
+  // BMI 23.0 - 24.9
+  // No Jumping / Low Impact
   // ----------------------------------------------------
   2: {
     title:
-      "🚶 Low Impact Workout สำหรับ Beginner",
+      "🚶 Low Impact Cardio สำหรับ Beginner 15 นาที",
 
     url:
-      "https://www.youtube.com/watch?v=oVbJ-LBWgr0"
+      "https://www.youtube.com/watch?v=MyCBKQtgYoA",
   },
 
 
   // ----------------------------------------------------
-  // 3 = อ้วนระดับ 1
-  // Walking / Low Impact / No Jumping
+  // BMI 25.0 - 29.9
+  // Low Impact Home Workout
   // ----------------------------------------------------
   3: {
     title:
-      "🚶 Low Impact Walking Workout 20 นาที",
+      "🚶 Low Impact Workout 20 นาที",
 
     url:
-      "https://www.youtube.com/watch?v=wOUjeYfk_8o"
+      "https://www.youtube.com/watch?v=Xi33JHnAd9I",
   },
 
 
   // ----------------------------------------------------
-  // 4 = อ้วนระดับ 2
-  // Gentle / Chair / Low Impact
+  // BMI >= 30
+  // Chair / Gentle Exercise
   // ----------------------------------------------------
   4: {
     title:
-      "🪑 Gentle Chair Exercise 15 นาที",
+      "🪑 Chair Strength Workout 15 นาที",
 
     url:
-      "https://www.youtube.com/watch?v=9BStbeZdx28"
+      "https://www.youtube.com/watch?v=wAh_wA16AFY",
   },
 };
 
 
 // ======================================================
-// CHECK ENVIRONMENT
+// ENV CHECK
 // ======================================================
 if (!LINE_ACCESS_TOKEN) {
 
@@ -177,11 +200,219 @@ app.get("/", (req, res) => {
       "LINE BMI Bot",
 
     version:
-      "2.0.0"
+      "3.0.0",
 
   });
 
 });
+
+
+// ======================================================
+// BMI IMAGE PROXY
+//
+// สำคัญมาก
+//
+// LINE เปิด:
+//
+// https://line-chatbot-43pa.onrender.com/bmi-image/2.png
+//
+// Bot จะไปดึง:
+//
+// Supabase/bmi2333.png
+//
+// แล้วส่ง image/png กลับให้ LINE
+// ======================================================
+app.get(
+  "/bmi-image/:file",
+  async (req, res) => {
+
+    try {
+
+      // เช่น
+      // 2.png -> 2
+      const fileName =
+        String(
+          req.params.file || ""
+        );
+
+
+      const classId =
+        Number(
+          fileName.replace(
+            /\.png$/i,
+            ""
+          )
+        );
+
+
+      // ตรวจ class
+      if (
+        !Number.isInteger(classId) ||
+        classId < 0 ||
+        classId > 4
+      ) {
+
+        return res
+          .status(404)
+          .send(
+            "Image not found"
+          );
+
+      }
+
+
+      const sourceUrl =
+        SUPABASE_BMI_IMAGES[
+          classId
+        ];
+
+
+      if (!sourceUrl) {
+
+        return res
+          .status(404)
+          .send(
+            "Image not found"
+          );
+
+      }
+
+
+      console.log(
+        "🖼️ IMAGE PROXY REQUEST:"
+      );
+
+      console.log(
+        "CLASS:",
+        classId
+      );
+
+      console.log(
+        "SOURCE:",
+        sourceUrl
+      );
+
+
+      // ==================================================
+      // ดาวน์โหลดจาก Supabase
+      // ==================================================
+      const response =
+        await axios.get(
+
+          sourceUrl,
+
+          {
+            responseType:
+              "arraybuffer",
+
+            timeout:
+              20000,
+
+            maxRedirects:
+              5,
+
+            headers: {
+
+              Accept:
+                "image/png,image/jpeg,image/*",
+
+              "User-Agent":
+                "Face2BMI-LINE-Bot/1.0",
+
+            },
+          }
+
+        );
+
+
+      const imageBuffer =
+        Buffer.from(
+          response.data
+        );
+
+
+      const contentType =
+        response.headers[
+          "content-type"
+        ] ||
+        "image/png";
+
+
+      console.log(
+        "✅ SUPABASE IMAGE LOADED"
+      );
+
+      console.log(
+        "CONTENT TYPE:",
+        contentType
+      );
+
+      console.log(
+        "SIZE:",
+        imageBuffer.length,
+        "bytes"
+      );
+
+
+      // ==================================================
+      // Headers สำหรับ LINE
+      // ==================================================
+      res.setHeader(
+        "Content-Type",
+        contentType
+      );
+
+
+      res.setHeader(
+        "Content-Length",
+        String(
+          imageBuffer.length
+        )
+      );
+
+
+      res.setHeader(
+        "Cache-Control",
+        "public, max-age=3600"
+      );
+
+
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+      );
+
+
+      return res
+        .status(200)
+        .send(
+          imageBuffer
+        );
+
+
+    } catch (error) {
+
+      console.error(
+        "❌ IMAGE PROXY ERROR:"
+      );
+
+
+      console.error(
+        error.response?.status ||
+        error.message
+      );
+
+
+      return res
+        .status(500)
+        .send(
+          "Cannot load image"
+        );
+
+    }
+
+  }
+);
 
 
 // ======================================================
@@ -191,8 +422,8 @@ app.post(
   "/webhook",
   async (req, res) => {
 
-    // ตอบ LINE server ทันที
-    // ป้องกัน webhook timeout
+    // ตอบ LINE Server ก่อน
+    // กัน webhook timeout
     res.sendStatus(200);
 
 
@@ -220,12 +451,14 @@ app.post(
           event
         );
 
-      }
-
-      catch (error) {
+      } catch (error) {
 
         console.error(
-          "❌ EVENT ERROR:",
+          "❌ EVENT ERROR:"
+        );
+
+
+        console.error(
           error.response?.data ||
           error.message
         );
@@ -259,14 +492,17 @@ async function handleEvent(
     "======================================"
   );
 
+
   console.log(
     "📩 NEW LINE EVENT"
   );
+
 
   console.log(
     "MESSAGE TYPE:",
     event.message?.type
   );
+
 
   console.log(
     "USER ID AVAILABLE:",
@@ -275,7 +511,7 @@ async function handleEvent(
 
 
   // ====================================================
-  // รับเฉพาะรูปภาพ
+  // รับเฉพาะรูป
   // ====================================================
   if (
     !event.message ||
@@ -293,7 +529,7 @@ async function handleEvent(
         [
           "📸 กรุณาส่งภาพที่เห็นใบหน้าตรงและชัดเจน",
           "",
-          "ระบบจะประเมินรูปร่างจากภาพด้วย AI 😊"
+          "ระบบจะประเมินรูปร่างจากภาพด้วย AI 😊",
         ].join("\n")
 
       );
@@ -307,11 +543,9 @@ async function handleEvent(
 
 
   // ====================================================
-  // ต้องมี userId สำหรับ push message
+  // ต้องมี USER ID
   // ====================================================
-  if (
-    !userId
-  ) {
+  if (!userId) {
 
     console.error(
       "❌ USER ID NOT FOUND"
@@ -339,12 +573,11 @@ async function handleEvent(
 
 
   // ====================================================
-  // PROCESSING MESSAGE
+  // PROCESSING
   //
-  // ปัจจุบันตั้ง false
-  // เพราะ LINE OA มี Auto-response อยู่แล้ว
+  // false = ไม่ส่งจาก code
   //
-  // จึงไม่ขึ้นซ้ำ 2 รอบ
+  // ป้องกันข้อความขึ้น 2 รอบ
   // ====================================================
   if (
     SEND_PROCESSING_FROM_CODE &&
@@ -359,21 +592,17 @@ async function handleEvent(
 
         [
           "⏳ ระบบกำลังประมวลผล",
-          "กรุณารอสักครู่....."
+          "กรุณารอสักครู่.....",
         ].join("\n")
 
       );
 
-    }
-
-    catch (
-      processingError
-    ) {
+    } catch (error) {
 
       console.error(
-        "⚠️ PROCESSING MESSAGE ERROR:",
-        processingError.response?.data ||
-        processingError.message
+        "⚠️ PROCESSING REPLY ERROR:",
+        error.response?.data ||
+        error.message
       );
 
     }
@@ -388,7 +617,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // 1. DOWNLOAD รูปจาก LINE
+    // 1. DOWNLOAD IMAGE FROM LINE
     // ==================================================
     console.log(
       "⬇️ DOWNLOADING IMAGE FROM LINE..."
@@ -405,15 +634,17 @@ async function handleEvent(
           headers: {
 
             Authorization:
-              `Bearer ${LINE_ACCESS_TOKEN}`
+              `Bearer ${LINE_ACCESS_TOKEN}`,
 
           },
+
 
           responseType:
             "arraybuffer",
 
+
           timeout:
-            30000
+            30000,
 
         }
 
@@ -452,7 +683,7 @@ async function handleEvent(
           "image.jpg",
 
         contentType:
-          "image/jpeg"
+          "image/jpeg",
 
       }
 
@@ -460,14 +691,14 @@ async function handleEvent(
 
 
     // ==================================================
-    // 3. SEND IMAGE TO AI
+    // 3. SEND TO AI
     // ==================================================
     const predictUrl =
       `${AI_API_BASE}/predict`;
 
 
     console.log(
-      "🧠 SENDING IMAGE TO AI:"
+      "🧠 SENDING TO AI:"
     );
 
 
@@ -490,13 +721,13 @@ async function handleEvent(
             ...form.getHeaders(),
 
             Accept:
-              "application/json"
+              "application/json",
 
           },
 
-          // Render Free อาจ cold start
+
           timeout:
-            120000
+            120000,
 
         }
 
@@ -514,7 +745,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // 4. อ่านข้อมูลจาก AI Backend
+    // 4. AI RESULT
     // ==================================================
     const {
 
@@ -524,7 +755,7 @@ async function handleEvent(
 
       confidence,
 
-      face_count
+      face_count,
 
     } =
       aiRes.data || {};
@@ -548,8 +779,7 @@ async function handleEvent(
     ) {
 
       console.error(
-        "❌ INVALID AI RESPONSE:",
-        aiRes.data
+        "❌ INVALID AI RESPONSE"
       );
 
 
@@ -559,7 +789,7 @@ async function handleEvent(
 
         [
           "❌ ระบบได้รับผลลัพธ์จาก AI ไม่ครบถ้วน",
-          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ"
+          "กรุณาลองใหม่อีกครั้งค่ะ",
         ].join("\n")
 
       );
@@ -571,7 +801,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // CLASS VALIDATE
+    // VALIDATE CLASS
     // ==================================================
     if (
       class_id < 0 ||
@@ -579,7 +809,7 @@ async function handleEvent(
     ) {
 
       console.error(
-        "❌ UNKNOWN BMI CLASS:",
+        "❌ INVALID CLASS:",
         class_id
       );
 
@@ -588,7 +818,7 @@ async function handleEvent(
 
         userId,
 
-        "❌ ระบบได้รับประเภท BMI ที่ไม่ถูกต้อง กรุณาลองใหม่อีกครั้งค่ะ"
+        "❌ ระบบได้รับประเภท BMI ที่ไม่ถูกต้อง"
 
       );
 
@@ -607,19 +837,20 @@ async function handleEvent(
       );
 
 
-    const confidencePercent = (
+    const confidencePercent =
+      (
 
-      confidenceNumber <= 1
+        confidenceNumber <= 1
 
-        ? confidenceNumber * 100
+          ? confidenceNumber * 100
 
-        : confidenceNumber
+          : confidenceNumber
 
-    ).toFixed(2);
+      ).toFixed(2);
 
 
     // ==================================================
-    // 6. YOUTUBE ตาม BMI
+    // 6. YOUTUBE
     // ==================================================
     const workout =
       BMI_YOUTUBE[
@@ -628,7 +859,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // 7. สร้างข้อความผลลัพธ์
+    // 7. RESULT TEXT
     // ==================================================
     const resultLines = [
 
@@ -643,16 +874,20 @@ async function handleEvent(
     ];
 
 
-    // เพิ่มคลิปออกกำลังกาย
     if (
       workout
     ) {
 
       resultLines.push(
+
         "",
-        "🏃 คลิปออกกำลังกายแนะนำ",
+
+        "🏃 คลิปออกกำลังกายแนะนำ:",
+
         workout.title,
+
         workout.url
+
       );
 
     }
@@ -664,7 +899,7 @@ async function handleEvent(
 
       "ℹ️ ผลลัพธ์เป็นการประเมินจากภาพด้วยระบบ AI",
 
-      "คลิปเป็นคำแนะนำการออกกำลังกายทั่วไป ควรเลือกความหนักให้เหมาะกับร่างกาย"
+      "คำแนะนำการออกกำลังกายเป็นข้อมูลทั่วไป ควรเลือกความหนักให้เหมาะสมกับร่างกาย"
 
     );
 
@@ -676,7 +911,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // 8. PUSH RESULT TEXT
+    // 8. PUSH TEXT
     // ==================================================
     await pushText(
 
@@ -693,7 +928,10 @@ async function handleEvent(
 
 
     // ==================================================
-    // 9. RESULT IMAGE
+    // 9. IMAGE
+    //
+    // ตรงนี้เป็น URL Proxy ของ Render
+    // แต่รูปต้นทางมาจาก Supabase
     // ==================================================
     const resultImageUrl =
       BMI_IMAGES[
@@ -708,8 +946,16 @@ async function handleEvent(
 
 
     console.log(
-      "🖼️ IMAGE URL:",
+      "🖼️ LINE IMAGE URL:",
       resultImageUrl
+    );
+
+
+    console.log(
+      "🖼️ SUPABASE SOURCE:",
+      SUPABASE_BMI_IMAGES[
+        class_id
+      ]
     );
 
 
@@ -717,9 +963,8 @@ async function handleEvent(
       !resultImageUrl
     ) {
 
-      console.log(
-        "⚠️ NO IMAGE FOR CLASS:",
-        class_id
+      console.error(
+        "❌ IMAGE URL NOT FOUND"
       );
 
 
@@ -729,7 +974,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // 10. CHECK IMAGE URL
+    // 10. CHECK PROXY IMAGE
     // ==================================================
     const imageCheck =
       await checkImageUrl(
@@ -742,7 +987,7 @@ async function handleEvent(
     ) {
 
       console.error(
-        "❌ RESULT IMAGE URL INVALID"
+        "❌ IMAGE CHECK FAILED"
       );
 
 
@@ -752,25 +997,25 @@ async function handleEvent(
 
 
     console.log(
-      "✅ IMAGE URL ACCESSIBLE"
+      "✅ IMAGE CHECK OK"
     );
 
 
     console.log(
-      "🖼️ CONTENT TYPE:",
+      "CONTENT TYPE:",
       imageCheck.contentType
     );
 
 
     console.log(
-      "📦 IMAGE SIZE:",
+      "SIZE:",
       imageCheck.size,
       "bytes"
     );
 
 
     console.log(
-      "📦 IMAGE SIZE MB:",
+      "SIZE MB:",
       (
         imageCheck.size /
         1024 /
@@ -780,31 +1025,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // ต้องเป็น image
-    // ==================================================
-    if (
-
-      !imageCheck.contentType ||
-
-      !imageCheck.contentType.startsWith(
-        "image/"
-      )
-
-    ) {
-
-      console.error(
-        "❌ RESULT URL IS NOT IMAGE:",
-        imageCheck.contentType
-      );
-
-
-      return;
-
-    }
-
-
-    // ==================================================
-    // 11. PUSH RESULT IMAGE
+    // 11. PUSH IMAGE
     // ==================================================
     try {
 
@@ -818,14 +1039,10 @@ async function handleEvent(
 
 
       console.log(
-        "✅ RESULT IMAGE PUSHED SUCCESSFULLY"
+        "✅ RESULT IMAGE PUSHED"
       );
 
-    }
-
-    catch (
-      imageError
-    ) {
+    } catch (error) {
 
       console.error(
         "❌ IMAGE PUSH ERROR:"
@@ -833,8 +1050,8 @@ async function handleEvent(
 
 
       console.error(
-        imageError.response?.data ||
-        imageError.message
+        error.response?.data ||
+        error.message
       );
 
     }
@@ -861,7 +1078,7 @@ async function handleEvent(
 
 
     // ==================================================
-    // AI Backend 400
+    // BACKEND 400
     // ==================================================
     if (
       error.response?.status === 400
@@ -879,7 +1096,7 @@ async function handleEvent(
 
         [
           "📸 ระบบยังไม่สามารถประเมินภาพนี้ได้",
-          "กรุณาถ่ายใหม่โดยให้เห็นใบหน้าชัดเจน 1 คนค่ะ"
+          "กรุณาถ่ายใหม่โดยให้เห็นใบหน้าชัดเจน 1 คนค่ะ",
         ].join("\n")
 
       );
@@ -903,8 +1120,8 @@ async function handleEvent(
         userId,
 
         [
-          "⏳ ระบบประมวลผลนานกว่าปกติ",
-          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ"
+          "⏳ ระบบใช้เวลาประมวลผลนานกว่าปกติ",
+          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ",
         ].join("\n")
 
       );
@@ -926,19 +1143,15 @@ async function handleEvent(
 
         [
           "❌ ขออภัยค่ะ ระบบมีปัญหาชั่วคราว",
-          "กรุณาลองใหม่อีกครั้งค่ะ"
+          "กรุณาลองใหม่อีกครั้งค่ะ",
         ].join("\n")
 
       );
 
-    }
-
-    catch (
-      pushError
-    ) {
+    } catch (pushError) {
 
       console.error(
-        "❌ ERROR MESSAGE PUSH FAILED:",
+        "❌ ERROR PUSH FAILED:",
         pushError.response?.data ||
         pushError.message
       );
@@ -975,10 +1188,10 @@ async function checkImageUrl(
             "arraybuffer",
 
           timeout:
-            15000,
+            20000,
 
           maxRedirects:
-            5
+            5,
 
         }
 
@@ -996,19 +1209,19 @@ async function checkImageUrl(
 
 
     console.log(
-      "🔎 IMAGE CHECK STATUS:",
+      "IMAGE STATUS:",
       response.status
     );
 
 
     console.log(
-      "🔎 IMAGE CONTENT-TYPE:",
+      "IMAGE TYPE:",
       contentType
     );
 
 
     console.log(
-      "🔎 IMAGE CONTENT-LENGTH:",
+      "IMAGE SIZE:",
       size
     );
 
@@ -1016,30 +1229,26 @@ async function checkImageUrl(
     return {
 
       ok:
-        response.status === 200,
+        response.status === 200 &&
+        contentType.startsWith(
+          "image/"
+        ),
 
       status:
         response.status,
 
+      contentType:
+        contentType,
+
       size:
         size,
 
-      contentType:
-        contentType
-
     };
 
-  }
-
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
-      "❌ IMAGE URL CHECK FAILED:"
-    );
-
-
-    console.error(
+      "❌ IMAGE CHECK ERROR:",
       error.response?.status ||
       error.message
     );
@@ -1054,11 +1263,11 @@ async function checkImageUrl(
         error.response?.status ||
         null,
 
+      contentType:
+        "",
+
       size:
         0,
-
-      contentType:
-        ""
 
     };
 
@@ -1092,13 +1301,14 @@ async function replyLine(
             "text",
 
           text:
-            text
+            text,
 
-        }
+        },
 
-      ]
+      ],
 
     },
+
 
     {
 
@@ -1108,12 +1318,13 @@ async function replyLine(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
+
       timeout:
-        10000
+        10000,
 
     }
 
@@ -1147,13 +1358,14 @@ async function pushText(
             "text",
 
           text:
-            text
+            text,
 
-        }
+        },
 
-      ]
+      ],
 
     },
+
 
     {
 
@@ -1163,12 +1375,13 @@ async function pushText(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
+
       timeout:
-        10000
+        10000,
 
     }
 
@@ -1186,7 +1399,7 @@ async function pushImage(
 ) {
 
   console.log(
-    "📤 PUSHING IMAGE TO LINE:"
+    "📤 PUSH IMAGE:"
   );
 
 
@@ -1215,13 +1428,14 @@ async function pushImage(
             imageUrl,
 
           previewImageUrl:
-            imageUrl
+            imageUrl,
 
-        }
+        },
 
-      ]
+      ],
 
     },
+
 
     {
 
@@ -1231,12 +1445,13 @@ async function pushImage(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
+
       timeout:
-        15000
+        15000,
 
     }
 
