@@ -27,11 +27,11 @@ const LINE_PUSH_API =
 // ต้องเป็น HTTPS และเปิดจากภายนอกได้
 // ======================================================
 const BMI_IMAGES = {
-  0: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/sign/Model/Bmi18.png?token=eyJraWQiOiIzMzllODdhNi0xZmFlLTQ2NTctYTc3MC1lMmI2Yzk3ZTc5ZWUiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJNb2RlbC9CbWkxOC5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg4ODU3MDEwLCJleHAiOjE4MjAzOTMwMTB9.XXZ6eyyINcv07O8JTcvdVtOTVqntGGOp1wBVJvsdW9dpnMkKbPcecAWnYCiBjzZE4igqfG4aDVpz9kkQceyhFw",
-  1: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/sign/Model/Bmi22.png?token=eyJraWQiOiIzMzllODdhNi0xZmFlLTQ2NTctYTc3MC1lMmI2Yzk3ZTc5ZWUiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJNb2RlbC9CbWkyMi5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg4ODU3MDI5LCJleHAiOjE4MjAzOTMwMjl9.97zGeRRM4oFZ7cEyY9HWAWenO6zaibDZrf8huLuYsEkZW3GCxrq1B-I9mBY6m1xWVxnmhHSA08ycbrsyOqazXw",
-  2: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/sign/Model/bmi2333.png?token=eyJraWQiOiIzMzllODdhNi0xZmFlLTQ2NTctYTc3MC1lMmI2Yzk3ZTc5ZWUiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJNb2RlbC9ibWkyMzMzLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODg4NTcwNDgsImV4cCI6MTgyMDM5MzA0OH0.20frpatD8gQnTV2NBb_QvWPX6VzhckjNYSg3cOuApvmBhqgBP-ZkA14zQMMWbPxOQPUn0g5bpK7McIRMT1NPcQ",
-  3: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/sign/Model/level1.png?token=eyJraWQiOiIzMzllODdhNi0xZmFlLTQ2NTctYTc3MC1lMmI2Yzk3ZTc5ZWUiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJNb2RlbC9sZXZlbDEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4ODg1NzA2MSwiZXhwIjoxODIwMzkzMDYxfQ.xde1o0UYFv7PC9-UhmS0XS6eDxPXewcSewDNhml5HakulPFU8OrpcWk5gAl_T4092F4ncnDc0q4mjyHVPmN2xg",
-  4: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/sign/Model/level2.png?token=eyJraWQiOiIzMzllODdhNi0xZmFlLTQ2NTctYTc3MC1lMmI2Yzk3ZTc5ZWUiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJNb2RlbC9sZXZlbDIucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4ODg1NzA3NCwiZXhwIjoxODIwMzkzMDc0fQ.T_K4ns0I3pIn7Dojb3IaLRKvAJYNKB-yoEJTV6b4qZY46i0inrPMjGEj_tEZenPhIK8DnCzemUQBL_U84DFXLw",
+  0: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi18.png",
+  1: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi22.png",
+  2: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/bmi2333.png",
+  3: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level1.png",
+  4: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level2.png",
 };
 
 
