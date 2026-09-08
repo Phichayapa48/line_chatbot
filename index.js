@@ -8,6 +8,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+
 // ======================================================
 // CONFIG
 // ======================================================
@@ -23,20 +24,23 @@ const LINE_PUSH_API =
 
 // ======================================================
 // BMI RESULT IMAGES
-// ใส่ลิงก์รูปของคุณตรงนี้
-// ต้องเป็น HTTPS และเปิดจากภายนอกได้
+// Public URL จาก Supabase
 // ======================================================
 const BMI_IMAGES = {
   0: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi18.png",
+
   1: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi22.png",
+
   2: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/bmi2333.png",
+
   3: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level1.png",
+
   4: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level2.png",
 };
 
 
 // ======================================================
-// CHECK ENV
+// CHECK ENVIRONMENT
 // ======================================================
 if (!LINE_ACCESS_TOKEN) {
   throw new Error(
@@ -55,10 +59,12 @@ if (!AI_API_URL) {
 // HEALTH CHECK
 // ======================================================
 app.get("/", (req, res) => {
+
   res.json({
     status: "ok",
     service: "LINE BMI Bot"
   });
+
 });
 
 
@@ -68,7 +74,7 @@ app.get("/", (req, res) => {
 app.post("/webhook", async (req, res) => {
 
   // ตอบ LINE server ทันที
-  // กัน webhook timeout
+  // ป้องกัน webhook timeout
   res.sendStatus(200);
 
   const events = req.body?.events || [];
@@ -83,21 +89,23 @@ app.post("/webhook", async (req, res) => {
 
       await handleEvent(event);
 
-    } catch (err) {
+    } catch (error) {
 
       console.error(
         "❌ EVENT ERROR:",
-        err.response?.data ||
-        err.message
+        error.response?.data ||
+        error.message
       );
 
     }
+
   }
+
 });
 
 
 // ======================================================
-// HANDLE EVENT
+// HANDLE LINE EVENT
 // ======================================================
 async function handleEvent(event) {
 
@@ -107,10 +115,12 @@ async function handleEvent(event) {
   console.log("");
   console.log("======================================");
   console.log("📩 NEW LINE EVENT");
+
   console.log(
     "MESSAGE TYPE:",
     event.message?.type
   );
+
   console.log(
     "USER ID AVAILABLE:",
     Boolean(userId)
@@ -118,7 +128,7 @@ async function handleEvent(event) {
 
 
   // ====================================================
-  // รับเฉพาะรูป
+  // รับเฉพาะรูปภาพ
   // ====================================================
   if (
     !event.message ||
@@ -143,7 +153,7 @@ async function handleEvent(event) {
 
 
   // ====================================================
-  // ต้องมี userId สำหรับ pushMessage
+  // ตรวจ userId
   // ====================================================
   if (!userId) {
 
@@ -155,7 +165,7 @@ async function handleEvent(event) {
 
       await replyLine(
         replyToken,
-        "ขออภัยค่ะ ระบบไม่สามารถระบุผู้ใช้งานได้"
+        "❌ ระบบไม่สามารถระบุผู้ใช้งานได้"
       );
 
     }
@@ -165,7 +175,7 @@ async function handleEvent(event) {
 
 
   // ====================================================
-  // 1. ตอบกำลังประมวลผลก่อน
+  // 1. แจ้งกำลังประมวลผล
   // ====================================================
   if (replyToken) {
 
@@ -182,32 +192,38 @@ async function handleEvent(event) {
 
   try {
 
-    const imageId = event.message.id;
+    const imageId =
+      event.message.id;
 
 
     // ==================================================
-    // 2. โหลดรูปจาก LINE
+    // 2. Download รูปจาก LINE
     // ==================================================
     console.log(
       "⬇️ DOWNLOADING IMAGE FROM LINE..."
     );
 
 
-    const imageRes = await axios.get(
-      `https://api-data.line.me/v2/bot/message/${imageId}/content`,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${LINE_ACCESS_TOKEN}`,
-        },
+    const imageRes =
+      await axios.get(
 
-        responseType:
-          "arraybuffer",
+        `https://api-data.line.me/v2/bot/message/${imageId}/content`,
 
-        timeout:
-          30000,
-      }
-    );
+        {
+          headers: {
+
+            Authorization:
+              `Bearer ${LINE_ACCESS_TOKEN}`
+
+          },
+
+          responseType:
+            "arraybuffer",
+
+          timeout:
+            30000
+        }
+      );
 
 
     console.log(
@@ -223,24 +239,31 @@ async function handleEvent(event) {
     // ==================================================
     // 3. สร้าง FormData
     // ==================================================
-    const form = new FormData();
+    const form =
+      new FormData();
 
 
     form.append(
+
       "file",
-      Buffer.from(imageRes.data),
+
+      Buffer.from(
+        imageRes.data
+      ),
+
       {
         filename:
           "image.jpg",
 
         contentType:
-          "image/jpeg",
+          "image/jpeg"
       }
+
     );
 
 
     // ==================================================
-    // 4. ส่งรูปไป BMI AI Backend
+    // 4. ส่งรูปไป AI Backend
     // ==================================================
     console.log(
       "🧠 SENDING IMAGE TO AI:"
@@ -251,21 +274,28 @@ async function handleEvent(event) {
     );
 
 
-    const aiRes = await axios.post(
-      `${AI_API_URL}/predict`,
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-          Accept:
-            "application/json",
-        },
+    const aiRes =
+      await axios.post(
 
-        // Render Free อาจ cold start
-        timeout:
-          120000,
-      }
-    );
+        `${AI_API_URL}/predict`,
+
+        form,
+
+        {
+          headers: {
+
+            ...form.getHeaders(),
+
+            Accept:
+              "application/json"
+
+          },
+
+          // Render Free อาจใช้เวลาตื่น
+          timeout:
+            120000
+        }
+      );
 
 
     console.log(
@@ -278,9 +308,9 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 5. อ่าน response จาก Backend ปัจจุบัน
+    // 5. อ่านผลจาก Backend
     //
-    // Backend ส่ง:
+    // Backend ปัจจุบัน:
     //
     // {
     //   class_id,
@@ -298,7 +328,7 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 6. ตรวจ response
+    // 6. Validate response
     // ==================================================
     if (
       class_id === undefined ||
@@ -314,7 +344,7 @@ async function handleEvent(event) {
       );
 
 
-      await pushLine(
+      await pushText(
         userId,
         [
           "❌ ระบบได้รับผลลัพธ์จาก AI ไม่ครบถ้วน",
@@ -327,39 +357,42 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 7. แปลง confidence เป็น %
+    // 7. Confidence
     //
-    // Backend ส่ง 0-1
-    // เช่น 0.8234 -> 82.34%
+    // backend = 0.664
+    // LINE = 66.40%
     // ==================================================
+    const confidenceNumber =
+      Number(confidence);
+
+
     const confidencePercent =
       (
-        Number(confidence) * 100
+        confidenceNumber <= 1
+          ? confidenceNumber * 100
+          : confidenceNumber
       ).toFixed(2);
 
 
     // ==================================================
     // 8. สร้างข้อความผลลัพธ์
     // ==================================================
-    const replyText = [
-      "✅ ผลการประเมินจากระบบ AI",
+    const resultText = [
+      "✅ ผลการประเมินโดย AI",
       "",
-      `📊 ${bmi_label}`,
+      `สถานะ BMI: ${bmi_label}`,
+      `ความมั่นใจ: ${confidencePercent}%`,
       "",
-      `🎯 ความมั่นใจ: ${confidencePercent}%`,
-      `👤 จำนวนใบหน้าที่ตรวจพบ: ${face_count}`,
-      "",
-      "ℹ️ ผลลัพธ์เป็นการประเมินจากภาพด้วยโมเดล AI",
-      "ไม่ได้ใช้แทนการวินิจฉัยทางการแพทย์"
+      "ℹ️ ผลลัพธ์เป็นการประเมินจากภาพด้วยระบบ AI"
     ].join("\n");
 
 
     // ==================================================
     // 9. ส่งข้อความผลลัพธ์
     // ==================================================
-    await pushLine(
+    await pushText(
       userId,
-      replyText
+      resultText
     );
 
 
@@ -369,30 +402,42 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 10. เลือกรูปตาม BMI class
+    // 10. เลือกรูปตาม class_id
+    //
+    // 0 = น้ำหนักน้อย
+    // 1 = สมส่วน
+    // 2 = น้ำหนักเกิน
+    // 3 = อ้วนระดับ 1
+    // 4 = อ้วนระดับ 2
     // ==================================================
-    const imageUrl =
+    const resultImageUrl =
       BMI_IMAGES[class_id];
+
+
+    console.log(
+      "🖼️ CLASS ID:",
+      class_id
+    );
+
+    console.log(
+      "🖼️ IMAGE URL:",
+      resultImageUrl
+    );
 
 
     // ==================================================
     // 11. ส่งรูป
     // ==================================================
     if (
-      imageUrl &&
-      imageUrl.startsWith("https://")
+      resultImageUrl &&
+      resultImageUrl.startsWith("https://")
     ) {
-
-      console.log(
-        "🖼️ SENDING RESULT IMAGE"
-      );
-
 
       try {
 
         await pushImage(
           userId,
-          imageUrl
+          resultImageUrl
         );
 
 
@@ -402,9 +447,11 @@ async function handleEvent(event) {
 
       } catch (imageError) {
 
-        // รูปเสียไม่ควรทำให้ผล BMI หาย
         console.error(
-          "⚠️ IMAGE PUSH FAILED:",
+          "❌ IMAGE PUSH ERROR:"
+        );
+
+        console.error(
           imageError.response?.data ||
           imageError.message
         );
@@ -414,7 +461,7 @@ async function handleEvent(event) {
     } else {
 
       console.log(
-        "⚠️ RESULT IMAGE URL NOT SET FOR CLASS:",
+        "⚠️ NO RESULT IMAGE FOR CLASS:",
         class_id
       );
 
@@ -426,31 +473,30 @@ async function handleEvent(event) {
     );
 
 
-  } catch (err) {
+  } catch (error) {
 
     console.error(
       "❌ PROCESSING ERROR:"
     );
 
     console.error(
-      err.response?.data ||
-      err.message
+      error.response?.data ||
+      error.message
     );
 
 
     // ==================================================
-    // Backend ส่ง 400
-    // เช่น ไม่พบหน้า / หลายหน้า / confidence ต่ำ
+    // Backend 400
     // ==================================================
     if (
-      err.response?.status === 400
+      error.response?.status === 400
     ) {
 
       const detail =
-        err.response?.data?.detail;
+        error.response?.data?.detail;
 
 
-      await pushLine(
+      await pushText(
         userId,
         detail ||
         [
@@ -467,13 +513,14 @@ async function handleEvent(event) {
     // Timeout
     // ==================================================
     if (
-      err.code === "ECONNABORTED"
+      error.code ===
+      "ECONNABORTED"
     ) {
 
-      await pushLine(
+      await pushText(
         userId,
         [
-          "⏳ ระบบใช้เวลาประมวลผลนานกว่าปกติ",
+          "⏳ ระบบประมวลผลนานกว่าปกติ",
           "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ"
         ].join("\n")
       );
@@ -485,22 +532,24 @@ async function handleEvent(event) {
     // ==================================================
     // Error อื่น
     // ==================================================
-    await pushLine(
+    await pushText(
       userId,
       [
         "❌ ขออภัยค่ะ ระบบมีปัญหาชั่วคราว",
         "กรุณาลองใหม่อีกครั้งค่ะ"
       ].join("\n")
     );
+
   }
+
 }
 
 
 // ======================================================
-// REPLY LINE
+// REPLY MESSAGE
 //
-// ใช้ replyToken
-// ใช้ตอบครั้งแรก เช่น "กำลังประมวลผล"
+// ใช้สำหรับข้อความแรก
+// "กำลังประมวลผล"
 // ======================================================
 async function replyLine(
   replyToken,
@@ -508,6 +557,7 @@ async function replyLine(
 ) {
 
   await axios.post(
+
     LINE_REPLY_API,
 
     {
@@ -515,11 +565,8 @@ async function replyLine(
 
       messages: [
         {
-          type:
-            "text",
-
-          text:
-            text
+          type: "text",
+          text: text
         }
       ]
     },
@@ -532,40 +579,37 @@ async function replyLine(
 
         "Content-Type":
           "application/json"
+
       },
 
       timeout:
         10000
     }
+
   );
+
 }
 
 
 // ======================================================
 // PUSH TEXT
-//
-// ใช้ userId
-// ใช้ส่งผล AI หลังประมวลผลเสร็จ
 // ======================================================
-async function pushLine(
+async function pushText(
   userId,
   text
 ) {
 
   await axios.post(
+
     LINE_PUSH_API,
 
     {
-      to:
-        userId,
+      to: userId,
 
       messages: [
         {
-          type:
-            "text",
-
-          text:
-            text
+          type: "text",
+          text: text
         }
       ]
     },
@@ -578,12 +622,15 @@ async function pushLine(
 
         "Content-Type":
           "application/json"
+
       },
 
       timeout:
         10000
     }
+
   );
+
 }
 
 
@@ -595,7 +642,14 @@ async function pushImage(
   imageUrl
 ) {
 
+  console.log(
+    "📤 PUSH IMAGE:",
+    imageUrl
+  );
+
+
   await axios.post(
+
     LINE_PUSH_API,
 
     {
@@ -624,12 +678,15 @@ async function pushImage(
 
         "Content-Type":
           "application/json"
+
       },
 
       timeout:
-        10000
+        15000
     }
+
   );
+
 }
 
 
@@ -642,8 +699,11 @@ const PORT =
 
 
 app.listen(
+
   PORT,
+
   "0.0.0.0",
+
   () => {
 
     console.log(
@@ -651,4 +711,5 @@ app.listen(
     );
 
   }
+
 );
