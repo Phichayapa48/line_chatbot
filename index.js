@@ -6,14 +6,20 @@ import FormData from "form-data";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+
+app.use(
+  express.json({
+    limit: "2mb",
+  })
+);
 
 
 // ======================================================
 // CONFIG
 // ======================================================
 const AI_API_URL = process.env.AI_API_URL;
-const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const LINE_ACCESS_TOKEN =
+  process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
 const LINE_REPLY_API =
   "https://api.line.me/v2/bot/message/reply";
@@ -22,25 +28,38 @@ const LINE_PUSH_API =
   "https://api.line.me/v2/bot/message/push";
 
 
+// ตัด / ตัวท้ายออก
+const AI_API_BASE =
+  AI_API_URL
+    ? AI_API_URL.replace(/\/+$/, "")
+    : "";
+
+
 // ======================================================
 // BMI RESULT IMAGES
 // Public URL จาก Supabase
 // ======================================================
 const BMI_IMAGES = {
+
+  // น้ำหนักน้อยกว่าเกณฑ์
   0: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi18.png",
 
+  // สมส่วน
   1: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/Bmi22.png",
 
+  // น้ำหนักเกิน / ท้วม
   2: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/bmi2333.png",
 
+  // อ้วนระดับ 1
   3: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level1.png",
 
+  // อ้วนระดับ 2
   4: "https://mgaszucqsxgowdbfebpt.supabase.co/storage/v1/object/public/Model/level2.png",
 };
 
 
 // ======================================================
-// CHECK ENVIRONMENT
+// CHECK ENV
 // ======================================================
 if (!LINE_ACCESS_TOKEN) {
   throw new Error(
@@ -48,7 +67,8 @@ if (!LINE_ACCESS_TOKEN) {
   );
 }
 
-if (!AI_API_URL) {
+
+if (!AI_API_BASE) {
   throw new Error(
     "❌ AI_API_URL not set"
   );
@@ -62,7 +82,7 @@ app.get("/", (req, res) => {
 
   res.json({
     status: "ok",
-    service: "LINE BMI Bot"
+    service: "LINE BMI Bot",
   });
 
 });
@@ -73,15 +93,19 @@ app.get("/", (req, res) => {
 // ======================================================
 app.post("/webhook", async (req, res) => {
 
-  // ตอบ LINE server ทันที
+  // ตอบ LINE ทันที
   // ป้องกัน webhook timeout
   res.sendStatus(200);
 
-  const events = req.body?.events || [];
+
+  const events =
+    req.body?.events || [];
+
 
   if (events.length === 0) {
     return;
   }
+
 
   for (const event of events) {
 
@@ -105,16 +129,25 @@ app.post("/webhook", async (req, res) => {
 
 
 // ======================================================
-// HANDLE LINE EVENT
+// HANDLE EVENT
 // ======================================================
 async function handleEvent(event) {
 
-  const replyToken = event.replyToken;
-  const userId = event.source?.userId;
+  const replyToken =
+    event.replyToken;
+
+  const userId =
+    event.source?.userId;
+
 
   console.log("");
-  console.log("======================================");
-  console.log("📩 NEW LINE EVENT");
+  console.log(
+    "======================================"
+  );
+
+  console.log(
+    "📩 NEW LINE EVENT"
+  );
 
   console.log(
     "MESSAGE TYPE:",
@@ -128,7 +161,7 @@ async function handleEvent(event) {
 
 
   // ====================================================
-  // รับเฉพาะรูปภาพ
+  // รับเฉพาะรูป
   // ====================================================
   if (
     !event.message ||
@@ -142,7 +175,7 @@ async function handleEvent(event) {
         [
           "📸 กรุณาส่งภาพที่เห็นใบหน้าตรงและชัดเจน",
           "",
-          "ระบบจะประเมินรูปร่างจากภาพด้วย AI 😊"
+          "ระบบจะประเมินรูปร่างจากภาพด้วย AI 😊",
         ].join("\n")
       );
 
@@ -153,13 +186,14 @@ async function handleEvent(event) {
 
 
   // ====================================================
-  // ตรวจ userId
+  // ต้องมี userId
   // ====================================================
   if (!userId) {
 
     console.error(
       "❌ USER ID NOT FOUND"
     );
+
 
     if (replyToken) {
 
@@ -179,13 +213,25 @@ async function handleEvent(event) {
   // ====================================================
   if (replyToken) {
 
-    await replyLine(
-      replyToken,
-      [
-        "⏳ ระบบกำลังประมวลผล",
-        "กรุณารอสักครู่....."
-      ].join("\n")
-    );
+    try {
+
+      await replyLine(
+        replyToken,
+        [
+          "⏳ ระบบกำลังประมวลผล",
+          "กรุณารอสักครู่.....",
+        ].join("\n")
+      );
+
+    } catch (replyError) {
+
+      console.error(
+        "⚠️ PROCESSING MESSAGE FAILED:",
+        replyError.response?.data ||
+        replyError.message
+      );
+
+    }
 
   }
 
@@ -197,7 +243,7 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 2. Download รูปจาก LINE
+    // 2. ดาวน์โหลดรูปจาก LINE
     // ==================================================
     console.log(
       "⬇️ DOWNLOADING IMAGE FROM LINE..."
@@ -213,7 +259,7 @@ async function handleEvent(event) {
           headers: {
 
             Authorization:
-              `Bearer ${LINE_ACCESS_TOKEN}`
+              `Bearer ${LINE_ACCESS_TOKEN}`,
 
           },
 
@@ -221,7 +267,7 @@ async function handleEvent(event) {
             "arraybuffer",
 
           timeout:
-            30000
+            30000,
         }
       );
 
@@ -256,7 +302,7 @@ async function handleEvent(event) {
           "image.jpg",
 
         contentType:
-          "image/jpeg"
+          "image/jpeg",
       }
 
     );
@@ -265,19 +311,23 @@ async function handleEvent(event) {
     // ==================================================
     // 4. ส่งรูปไป AI Backend
     // ==================================================
+    const predictUrl =
+      `${AI_API_BASE}/predict`;
+
+
     console.log(
       "🧠 SENDING IMAGE TO AI:"
     );
 
     console.log(
-      `${AI_API_URL}/predict`
+      predictUrl
     );
 
 
     const aiRes =
       await axios.post(
 
-        `${AI_API_URL}/predict`,
+        predictUrl,
 
         form,
 
@@ -287,13 +337,13 @@ async function handleEvent(event) {
             ...form.getHeaders(),
 
             Accept:
-              "application/json"
+              "application/json",
 
           },
 
-          // Render Free อาจใช้เวลาตื่น
+          // Render Free อาจ cold start
           timeout:
-            120000
+            120000,
         }
       );
 
@@ -308,27 +358,18 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 5. อ่านผลจาก Backend
-    //
-    // Backend ปัจจุบัน:
-    //
-    // {
-    //   class_id,
-    //   bmi_label,
-    //   confidence,
-    //   face_count
-    // }
+    // 5. อ่าน Response จาก Backend
     // ==================================================
     const {
       class_id,
       bmi_label,
       confidence,
-      face_count
+      face_count,
     } = aiRes.data || {};
 
 
     // ==================================================
-    // 6. Validate response
+    // 6. Validate AI Response
     // ==================================================
     if (
       class_id === undefined ||
@@ -348,7 +389,7 @@ async function handleEvent(event) {
         userId,
         [
           "❌ ระบบได้รับผลลัพธ์จาก AI ไม่ครบถ้วน",
-          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ"
+          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ",
         ].join("\n")
       );
 
@@ -358,9 +399,6 @@ async function handleEvent(event) {
 
     // ==================================================
     // 7. Confidence
-    //
-    // backend = 0.664
-    // LINE = 66.40%
     // ==================================================
     const confidenceNumber =
       Number(confidence);
@@ -375,20 +413,27 @@ async function handleEvent(event) {
 
 
     // ==================================================
-    // 8. สร้างข้อความผลลัพธ์
+    // 8. ข้อความผลลัพธ์
     // ==================================================
     const resultText = [
+
       "✅ ผลการประเมินโดย AI",
+
       "",
+
       `สถานะ BMI: ${bmi_label}`,
+
       `ความมั่นใจ: ${confidencePercent}%`,
+
       "",
-      "ℹ️ ผลลัพธ์เป็นการประเมินจากภาพด้วยระบบ AI"
+
+      "ℹ️ ผลลัพธ์เป็นการประเมินจากภาพด้วยระบบ AI",
+
     ].join("\n");
 
 
     // ==================================================
-    // 9. ส่งข้อความผลลัพธ์
+    // 9. ส่งข้อความผล
     // ==================================================
     await pushText(
       userId,
@@ -403,12 +448,6 @@ async function handleEvent(event) {
 
     // ==================================================
     // 10. เลือกรูปตาม class_id
-    //
-    // 0 = น้ำหนักน้อย
-    // 1 = สมส่วน
-    // 2 = น้ำหนักเกิน
-    // 3 = อ้วนระดับ 1
-    // 4 = อ้วนระดับ 2
     // ==================================================
     const resultImageUrl =
       BMI_IMAGES[class_id];
@@ -425,44 +464,143 @@ async function handleEvent(event) {
     );
 
 
-    // ==================================================
-    // 11. ส่งรูป
-    // ==================================================
-    if (
-      resultImageUrl &&
-      resultImageUrl.startsWith("https://")
-    ) {
-
-      try {
-
-        await pushImage(
-          userId,
-          resultImageUrl
-        );
-
-
-        console.log(
-          "✅ RESULT IMAGE PUSHED"
-        );
-
-      } catch (imageError) {
-
-        console.error(
-          "❌ IMAGE PUSH ERROR:"
-        );
-
-        console.error(
-          imageError.response?.data ||
-          imageError.message
-        );
-
-      }
-
-    } else {
+    if (!resultImageUrl) {
 
       console.log(
         "⚠️ NO RESULT IMAGE FOR CLASS:",
         class_id
+      );
+
+      return;
+    }
+
+
+    // ==================================================
+    // 11. ตรวจ URL รูปก่อนส่ง
+    // ==================================================
+    const imageCheck =
+      await checkImageUrl(
+        resultImageUrl
+      );
+
+
+    if (!imageCheck.ok) {
+
+      console.error(
+        "❌ RESULT IMAGE URL INVALID"
+      );
+
+      return;
+    }
+
+
+    console.log(
+      "✅ IMAGE URL ACCESSIBLE"
+    );
+
+    console.log(
+      "🖼️ CONTENT TYPE:",
+      imageCheck.contentType
+    );
+
+    console.log(
+      "📦 IMAGE SIZE:",
+      imageCheck.size,
+      "bytes"
+    );
+
+    console.log(
+      "📦 IMAGE SIZE MB:",
+      (
+        imageCheck.size /
+        1024 /
+        1024
+      ).toFixed(2)
+    );
+
+
+    // ==================================================
+    // ต้องเป็น image
+    // ==================================================
+    if (
+      !imageCheck.contentType ||
+      !imageCheck.contentType.startsWith(
+        "image/"
+      )
+    ) {
+
+      console.error(
+        "❌ URL IS NOT AN IMAGE:",
+        imageCheck.contentType
+      );
+
+      return;
+    }
+
+
+    // ==================================================
+    // LINE preview URL ไม่ควรเกิน 1 MB
+    // ตอนนี้เราใช้รูปเดียวกันทั้ง preview/original
+    // ==================================================
+    const ONE_MB =
+      1024 * 1024;
+
+
+    if (
+      imageCheck.size >
+      ONE_MB
+    ) {
+
+      console.error(
+        "❌ IMAGE TOO LARGE FOR LINE PREVIEW"
+      );
+
+      console.error(
+        "Current size:",
+        (
+          imageCheck.size /
+          1024 /
+          1024
+        ).toFixed(2),
+        "MB"
+      );
+
+      console.error(
+        "Please reduce image below 1 MB"
+      );
+
+      return;
+    }
+
+
+    // ==================================================
+    // 12. ส่งรูป
+    // ==================================================
+    try {
+
+      await pushImage(
+        userId,
+        resultImageUrl
+      );
+
+
+      console.log(
+        "✅ RESULT IMAGE PUSHED SUCCESSFULLY"
+      );
+
+    } catch (imageError) {
+
+      console.error(
+        "❌ IMAGE PUSH ERROR:"
+      );
+
+      console.error(
+        imageError.response?.status
+      );
+
+      console.error(
+        imageError.response?.data ||
+        imageError.message
       );
 
     }
@@ -501,7 +639,7 @@ async function handleEvent(event) {
         detail ||
         [
           "📸 ระบบยังไม่สามารถประเมินภาพนี้ได้",
-          "กรุณาถ่ายใหม่โดยให้เห็นใบหน้าชัดเจน 1 คนค่ะ"
+          "กรุณาถ่ายใหม่โดยให้เห็นใบหน้าชัดเจน 1 คนค่ะ",
         ].join("\n")
       );
 
@@ -521,7 +659,7 @@ async function handleEvent(event) {
         userId,
         [
           "⏳ ระบบประมวลผลนานกว่าปกติ",
-          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ"
+          "กรุณาลองส่งรูปใหม่อีกครั้งค่ะ",
         ].join("\n")
       );
 
@@ -532,13 +670,25 @@ async function handleEvent(event) {
     // ==================================================
     // Error อื่น
     // ==================================================
-    await pushText(
-      userId,
-      [
-        "❌ ขออภัยค่ะ ระบบมีปัญหาชั่วคราว",
-        "กรุณาลองใหม่อีกครั้งค่ะ"
-      ].join("\n")
-    );
+    try {
+
+      await pushText(
+        userId,
+        [
+          "❌ ขออภัยค่ะ ระบบมีปัญหาชั่วคราว",
+          "กรุณาลองใหม่อีกครั้งค่ะ",
+        ].join("\n")
+      );
+
+    } catch (pushError) {
+
+      console.error(
+        "❌ ERROR MESSAGE PUSH FAILED:",
+        pushError.response?.data ||
+        pushError.message
+      );
+
+    }
 
   }
 
@@ -546,10 +696,132 @@ async function handleEvent(event) {
 
 
 // ======================================================
-// REPLY MESSAGE
-//
-// ใช้สำหรับข้อความแรก
-// "กำลังประมวลผล"
+// CHECK IMAGE URL
+// ======================================================
+async function checkImageUrl(
+  imageUrl
+) {
+
+  try {
+
+    console.log(
+      "🔎 CHECKING IMAGE URL..."
+    );
+
+
+    const response =
+      await axios.get(
+        imageUrl,
+        {
+          responseType:
+            "arraybuffer",
+
+          timeout:
+            15000,
+
+          maxRedirects:
+            5,
+        }
+      );
+
+
+    const contentType =
+      response.headers[
+        "content-type"
+      ] || "";
+
+
+    const size =
+      response.data?.length || 0;
+
+
+    console.log(
+      "🔎 IMAGE CHECK STATUS:",
+      response.status
+    );
+
+    console.log(
+      "🔎 IMAGE CONTENT-TYPE:",
+      contentType
+    );
+
+    console.log(
+      "🔎 IMAGE CONTENT-LENGTH:",
+      size
+    );
+
+
+    return {
+      ok:
+        response.status === 200,
+
+      status:
+        response.status,
+
+      size:
+        size,
+
+      contentType:
+        contentType,
+    };
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ IMAGE URL CHECK FAILED:"
+    );
+
+    console.error(
+      error.response?.status ||
+      error.message
+    );
+
+
+    if (
+      error.response?.data
+    ) {
+
+      try {
+
+        console.error(
+          Buffer.from(
+            error.response.data
+          ).toString(
+            "utf8"
+          )
+        );
+
+      } catch {
+        // ignore
+      }
+
+    }
+
+
+    return {
+      ok:
+        false,
+
+      status:
+        error.response?.status ||
+        null,
+
+      size:
+        0,
+
+      contentType:
+        "",
+    };
+
+  }
+
+}
+
+
+// ======================================================
+// REPLY LINE
+// ใช้ replyToken ครั้งแรก
 // ======================================================
 async function replyLine(
   replyToken,
@@ -561,14 +833,18 @@ async function replyLine(
     LINE_REPLY_API,
 
     {
-      replyToken,
+      replyToken:
+        replyToken,
 
       messages: [
         {
-          type: "text",
-          text: text
-        }
-      ]
+          type:
+            "text",
+
+          text:
+            text,
+        },
+      ],
     },
 
     {
@@ -578,12 +854,12 @@ async function replyLine(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
       timeout:
-        10000
+        10000,
     }
 
   );
@@ -604,14 +880,18 @@ async function pushText(
     LINE_PUSH_API,
 
     {
-      to: userId,
+      to:
+        userId,
 
       messages: [
         {
-          type: "text",
-          text: text
-        }
-      ]
+          type:
+            "text",
+
+          text:
+            text,
+        },
+      ],
     },
 
     {
@@ -621,12 +901,12 @@ async function pushText(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
       timeout:
-        10000
+        10000,
     }
 
   );
@@ -643,7 +923,10 @@ async function pushImage(
 ) {
 
   console.log(
-    "📤 PUSH IMAGE:",
+    "📤 PUSHING IMAGE TO LINE:"
+  );
+
+  console.log(
     imageUrl
   );
 
@@ -665,9 +948,9 @@ async function pushImage(
             imageUrl,
 
           previewImageUrl:
-            imageUrl
-        }
-      ]
+            imageUrl,
+        },
+      ],
     },
 
     {
@@ -677,12 +960,12 @@ async function pushImage(
           `Bearer ${LINE_ACCESS_TOKEN}`,
 
         "Content-Type":
-          "application/json"
+          "application/json",
 
       },
 
       timeout:
-        15000
+        15000,
     }
 
   );
